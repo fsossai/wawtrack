@@ -21,7 +21,30 @@ public:
   WAWTrack() : FunctionPass(ID) { }
 
   bool runOnFunction(Function &F) {
+    if (F.getName() != "main") return false;
+
     bool changed = false;
+
+    StoreInst *store = nullptr;
+    for (auto &I : instructions(F)) {
+      if (auto s = dyn_cast<StoreInst>(&I)) {
+        store = s;
+      }
+    }
+
+    auto versionFunc = "_ZN8wawtrack7versionEv";
+
+    errs() << *store << "\n";
+    auto &context = F.getContext();
+    auto voidPtrType = Type::getInt8PtrTy(context);
+    auto funcType = FunctionType::get(Type::getVoidTy(context), { voidPtrType }, false);
+    Function::Create(funcType, GlobalValue::ExternalLinkage, versionFunc, F.getParent());
+    auto callee = F.getParent()->getOrInsertFunction(versionFunc, funcType);
+    auto builder = IRBuilder<>(context);
+    builder.SetInsertPoint(store);
+    auto call = builder.CreateCall(callee, { store->getPointerOperand() });
+    errs() << *call << "\n";
+
     return changed;
   }
 
