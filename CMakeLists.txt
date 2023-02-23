@@ -15,5 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
+configure_file(wawtrack++.in wawtrack++ @ONLY)
+
 add_subdirectory(lib)
 add_subdirectory(pass)
