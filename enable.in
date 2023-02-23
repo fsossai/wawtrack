@@ -1,3 +1,4 @@
 #!/bin/bash
 
 export PATH="@CMAKE_BINARY_DIR@:$PATH"
+export LD_LIBRARY_PATH="@CMAKE_BINARY_DIR@/lib:$LD_LIBRARY_PATH"
