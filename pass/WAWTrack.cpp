@@ -20,9 +20,10 @@ public:
 
   WAWTrack() : FunctionPass(ID) { }
 
-  bool runOnFunction(Function &F) {
-    if (F.getName() != "main") return false;
+  std::set<StoreInst*> gatherStores(Function &F) {
+  }
 
+  bool runOnFunction(Function &F) {
     bool changed = false;
 
     StoreInst *store = nullptr;
@@ -32,18 +33,40 @@ public:
       }
     }
 
-    auto versionFunc = "_ZN8wawtrack7versionEv";
+    auto versionFunc = "_ZN8Ev";
+    auto trackerStoreFuncName = "_ZN8wawtrack5storeEPv";
+    auto trackerLoadFuncName = "_ZN8wawtrack4loadEPv";
+    auto trackerDumpFuncName = "_ZN8wawtrack4dumpEv";
 
     errs() << *store << "\n";
     auto &context = F.getContext();
     auto voidPtrType = Type::getInt8PtrTy(context);
-    auto funcType = FunctionType::get(Type::getVoidTy(context), { voidPtrType }, false);
-    Function::Create(funcType, GlobalValue::ExternalLinkage, versionFunc, F.getParent());
-    auto callee = F.getParent()->getOrInsertFunction(versionFunc, funcType);
+    //auto voidType = Type::getVoidTy(context);
+    auto eventFuncType = FunctionType::get(Type::getVoidTy(context), { voidPtrType }, false);
+    auto dumpFuncType = FunctionType::get(Type::getVoidTy(context), { }, false);
+
+    Function::Create(eventFuncType, GlobalValue::ExternalLinkage, trackerStoreFuncName, F.getParent());
+    Function::Create(eventFuncType, GlobalValue::ExternalLinkage, trackerLoadFuncName, F.getParent());
+    Function::Create(dumpFuncType, GlobalValue::ExternalLinkage, trackerDumpFuncName, F.getParent());
+
     auto builder = IRBuilder<>(context);
+
+
+    auto callee1 = F.getParent()->getOrInsertFunction(trackerDumpFuncName, dumpFuncType);
+    auto callee2 = F.getParent()->getOrInsertFunction(trackerLoadFuncName, eventFuncType);
+    auto callee3 = F.getParent()->getOrInsertFunction(trackerStoreFuncName, eventFuncType);
+
     builder.SetInsertPoint(store);
-    auto call = builder.CreateCall(callee, { store->getPointerOperand() });
-    errs() << *call << "\n";
+    auto call1 = builder.CreateCall(callee1, { });
+    builder.SetInsertPoint(call1);
+    auto call2 = builder.CreateCall(callee2, { store->getPointerOperand() });
+    builder.SetInsertPoint(call2);
+    auto call3 = builder.CreateCall(callee3, { store->getPointerOperand() });
+    builder.SetInsertPoint(call3);
+    auto call4 = builder.CreateCall(callee3, { store->getPointerOperand() });
+
+    errs() << *call1 << "\n";
+    errs() << *call2 << "\n";
 
     return changed;
   }
