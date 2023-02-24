@@ -20,28 +20,43 @@ public:
 
   WAWTrack() : FunctionPass(ID) { }
 
+  std::set<LoadInst*> gatherLoads(Function &F) {
+    std::set<LoadInst*> loads;
+
+    for (auto &I : instructions(F)) {
+      if (auto l = dyn_cast<StoreInst>(&I)) {
+        loads.insert(l);
+      }
+    }
+
+    return loads;
+  }
+
   std::set<StoreInst*> gatherStores(Function &F) {
+    std::set<StoreInst*> stores;
+
+    for (auto &I : instructions(F)) {
+      if (auto s = dyn_cast<StoreInst>(&I)) {
+        stores.insert(s);
+      }
+    }
+
+    return stores;
   }
 
   bool runOnFunction(Function &F) {
     bool changed = false;
 
-    StoreInst *store = nullptr;
-    for (auto &I : instructions(F)) {
-      if (auto s = dyn_cast<StoreInst>(&I)) {
-        store = s;
-      }
-    }
+    auto stores = gatherStores(F);
+    auto loads = gatherLoads(F);
 
-    auto versionFunc = "_ZN8Ev";
     auto trackerStoreFuncName = "_ZN8wawtrack5storeEPv";
     auto trackerLoadFuncName = "_ZN8wawtrack4loadEPv";
     auto trackerDumpFuncName = "_ZN8wawtrack4dumpEv";
 
-    errs() << *store << "\n";
     auto &context = F.getContext();
+
     auto voidPtrType = Type::getInt8PtrTy(context);
-    //auto voidType = Type::getVoidTy(context);
     auto eventFuncType = FunctionType::get(Type::getVoidTy(context), { voidPtrType }, false);
     auto dumpFuncType = FunctionType::get(Type::getVoidTy(context), { }, false);
 
@@ -50,7 +65,6 @@ public:
     Function::Create(dumpFuncType, GlobalValue::ExternalLinkage, trackerDumpFuncName, F.getParent());
 
     auto builder = IRBuilder<>(context);
-
 
     auto callee1 = F.getParent()->getOrInsertFunction(trackerDumpFuncName, dumpFuncType);
     auto callee2 = F.getParent()->getOrInsertFunction(trackerLoadFuncName, eventFuncType);
