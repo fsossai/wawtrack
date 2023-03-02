@@ -5,7 +5,9 @@ using namespace std;
 
 namespace wawtrack {
 
-static map<void*, int> bucket;
+using bucket_t = map<void*, int>;
+
+static bucket_t bucket;
 
 void version(void) {
   cout << "tracker version 0.1.0" << endl;
@@ -26,5 +28,16 @@ void dump(void) {
     cout << "\t" << ptr << "\t" << count << endl;
   }
 }
+
+class Printer {
+public:
+  Printer() { cout << "Printer()" << endl; } 
+
+  ~Printer() {
+    dump();
+  }
+};
+
+static Printer printer;
 
 } // namespace wawtrack
