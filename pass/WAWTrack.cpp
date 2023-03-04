@@ -1,4 +1,5 @@
 #include <iostream>
+#include <set>
 
 #include "llvm/Pass.h"
 #include "llvm/IR/Type.h"
@@ -20,7 +21,7 @@ public:
 
   WAWTrack() : FunctionPass(ID) { }
 
-  std::set<LoadInst*> gatherLoads(Function &F) {
+  static std::set<LoadInst*> gatherLoads(Function &F) {
     std::set<LoadInst*> loads;
 
     for (auto &I : instructions(F)) {
@@ -32,7 +33,7 @@ public:
     return loads;
   }
 
-  std::set<StoreInst*> gatherStores(Function &F) {
+  static std::set<StoreInst*> gatherStores(Function &F) {
     std::set<StoreInst*> stores;
 
     for (auto &I : instructions(F)) {
@@ -44,7 +45,7 @@ public:
     return stores;
   }
 
-  bool injectLoadTrackers(Function &F, const std::set<LoadInst*> &loads) {
+  static bool injectLoadTrackers(Function &F, const std::set<LoadInst*> &loads) {
     if (loads.size() == 0) {
       return false;
     }
@@ -60,13 +61,14 @@ public:
 
     for (auto load : loads) {
       builder.SetInsertPoint(load);
-      builder.CreateCall(callee, { load->getPointerOperand() });
+      auto bitcast = builder.CreateBitCast(load->getPointerOperand(), voidPtrType);
+      builder.CreateCall(callee, { bitcast });
     }
 
     return true;
   }
 
-  bool injectStoreTrackers(Function &F, const std::set<StoreInst*> &stores) {
+  static bool injectStoreTrackers(Function &F, const std::set<StoreInst*> &stores) {
     if (stores.size() == 0) {
       return false;
     }
@@ -82,7 +84,8 @@ public:
 
     for (auto store : stores) {
       builder.SetInsertPoint(store);
-      builder.CreateCall(callee, { store->getPointerOperand() });
+      auto bitcast = builder.CreateBitCast(store->getPointerOperand(), voidPtrType);
+      builder.CreateCall(callee, { bitcast });
     }
 
     return true;
@@ -91,11 +94,11 @@ public:
   bool runOnFunction(Function &F) {
     bool changed = false;
 
-    auto stores = gatherStores(F);
-    auto loads = gatherLoads(F);
+    auto stores = WAWTrack::gatherStores(F);
+    auto loads = WAWTrack::gatherLoads(F);
 
-    changed |= injectStoreTrackers(F, stores);
-    changed |= injectLoadTrackers(F, loads);
+    changed |= WAWTrack::injectStoreTrackers(F, stores);
+    changed |= WAWTrack::injectLoadTrackers(F, loads);
 
     return changed;
   }
