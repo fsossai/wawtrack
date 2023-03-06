@@ -14,21 +14,17 @@ void version(void) {
 }
 
 void load(void *ptr) {
-  //cout << "tracker load " << ptr << endl;
   bucket[ptr]--;
 }
 
 void store(void *ptr) {
-  //cout << "tracker store " << ptr << endl;
-  //cout << ( bucket.find(ptr) != bucket.end() ) << endl;
   bucket[ptr]++;
 }
 
 void dump(void) {
-  cout << "tracker dump" << endl;
   for (auto &[ptr, count] : bucket) {
     if (count != 0) {
-      cout << "\t" << ptr << "\t" << count << endl;
+      cerr << "\t" << ptr << "\t" << count << endl;
     }
   }
 }

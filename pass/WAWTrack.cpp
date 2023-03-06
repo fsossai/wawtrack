@@ -1,5 +1,6 @@
 #include <iostream>
 #include <set>
+#include <string>
 
 #include "llvm/Pass.h"
 #include "llvm/IR/Type.h"
@@ -72,6 +73,8 @@ public:
     if (stores.size() == 0) {
       return false;
     }
+
+    errs() << "wawtrack: " << F.getName() << "\n";
 
     auto &context = F.getContext();
     auto voidPtrType = Type::getInt8PtrTy(context);
