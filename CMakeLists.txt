@@ -19,5 +19,5 @@ configure_file(wopt.in wopt @ONLY)
 configure_file(wawtrack++.in wawtrack++ @ONLY)
 configure_file(enable.in enable @ONLY)
 
-add_subdirectory(lib)
+add_subdirectory(runtime)
 add_subdirectory(pass)
