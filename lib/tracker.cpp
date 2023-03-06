@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <map>
 
 using namespace std;
@@ -22,9 +23,11 @@ void store(void *ptr) {
 }
 
 void dump(void) {
+  ofstream dump("wawtracker_dump.txt");
+
   for (auto &[ptr, count] : bucket) {
     if (count != 0) {
-      cerr << "\t" << ptr << "\t" << count << endl;
+      dump << ptr << "\t" << count << endl;
     }
   }
 }
